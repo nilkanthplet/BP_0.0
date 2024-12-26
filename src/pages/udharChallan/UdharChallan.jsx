@@ -50,7 +50,7 @@ const UdharChallan = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/users");
+        const response = await axios.get("http://54.161.153.204:5000/users");
         setUserData(response.data);
       } catch (error) {
         console.error("Error fetching users:", error);
@@ -60,7 +60,7 @@ const UdharChallan = () => {
 
     const fetchReturnItems = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/return-items");
+        const response = await axios.get("http://54.161.153.204:5000/return-items");
         setReturnItems(response.data);
       } catch (error) {
         console.error("Error fetching return items:", error);
@@ -148,7 +148,7 @@ const UdharChallan = () => {
 
     try {
       // Include the phone number in the request
-      const response = await axios.post("http://localhost:5000/users", {
+      const response = await axios.post("http://54.161.153.204:5000/users", {
         ...newUser,
         phone: newUser.phone || "", // Ensure phone is included even if empty
       });
@@ -251,7 +251,7 @@ const UdharChallan = () => {
       console.log("Submitting data:", submissionData);
 
       const response = await axios.post(
-        "http://localhost:5000/return-items",
+        "http://54.161.153.204:5000/return-items",
         submissionData,
         {
           headers: {
@@ -596,63 +596,54 @@ const UdharChallan = () => {
           <div
             style={{
               margin: "10px 0",
-              // display: "flex",
-              // flexWrap: "wrap",
               width: "550px",
             }}
           >
             {/* Receipt Number and Date */}
-            <div className="absolute top-[1378px] ">
-              <div className="ml-48 left-[200px] text-black-800">
-                <strong>{formData?.receiptNumber}</strong>
-              </div>
-            </div>
-            <div className="absolute top-[1378px] ">
-              <div className="ml-[580px] text-black-800">
-                <strong>
-                  {formData?.date
-                    ? new Date(formData.date)
-                        .toLocaleDateString("en-GB", {
-                          day: "2-digit",
-                          month: "2-digit",
-                          year: "numeric",
-                        })
-                        .split("/")
-                        .join("-")
-                    : ""}
-                </strong>
-              </div>
-            </div>
+        <div className="absolute top-[1400px] ">
+          <div className="ml-48 left-[200px] text-black-800">
+            <strong>{formData?.receiptNumber}</strong>
+          </div> 
+        </div>
+        <div className="absolute top-[1400px] ">
+          <div className="ml-[580px] text-black-800">
+          <strong>
+      {formData?.date ? new Date(formData.date).toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      }).split('/').join('-') : ''}
+    </strong>
+          </div>
+        </div>
             {/* Name and ID */}
-            <div className="absolute top-[1426px] flex">
-              <div className="ml-40 left-[155px] text-black-800 ">
-                <strong style={{ fontSize: "20px" }}>{formData?.name}</strong>
-              </div>
-              <div className="absolute left-[626px] text-black-800">
-                <strong style={{ fontSize: "20px" }}>{formData?.userId}</strong>
-              </div>
-            </div>
-
-            <div className="absolute top-[1458px]">
-              <div className="ml-40 left-[135px] text-blck-800">
-                <strong style={{ fontSize: "20px" }}>{formData?.site}</strong>
-              </div>
-            </div>
-            <div className="absolute top-[1514px]">
-              <div className="ml-40 left-[135px] text-blck-800">
-                <strong style={{ fontSize: "20px" }}>{formData?.phone}</strong>
-              </div>
-            </div>
-            <div className="absolute top-[1560px]">
-              <div className="absolute left-[380px] text-white">
-                <strong style={{ fontSize: "20px" }}>
-                  {formData?.selectedMarkOption}
-                </strong>
-              </div>
-            </div>
+        <div className="absolute top-[1450px] flex">
+          <div className="ml-40 left-[155px] text-black-800 ">
+          <strong style={{ fontSize: "20px" }}>{formData?.name}</strong>
+          </div>
+          <div className="absolute left-[626px] text-black-800">
+          <strong style={{ fontSize: "20px" }}>{formData?.userId}</strong>
+          </div>
+        </div>
+        
+        <div className="absolute top-[1483px]">
+          <div className="ml-40 left-[135px] text-blck-800">
+          <strong style={{ fontSize: "20px" }}>{formData?.site}</strong>
+          </div>
+        </div>
+        <div className="absolute top-[1536px]">
+          <div className="ml-40 left-[135px] text-blck-800">
+          <strong style={{ fontSize: "20px" }}>{formData?.phone}</strong>
+          </div>
+        </div>
+        <div className="absolute top-[1584px]">
+          <div className="absolute left-[390px] text-white">
+          <strong style={{ fontSize: "20px" }}>{formData?.selectedMarkOption}</strong>
+          </div>
+        </div>
           </div>
 
-          <div className="absolute top-[1126px] left-[455px] w-[600px]">
+          <div className="absolute top-[1150px] left-[480px] w-[600px]">
             {/* Table Data */}
             <div className="absolute top-[480px] left-[310px] w-[600px]">
               {formData?.sizes.map((item, index) => (
