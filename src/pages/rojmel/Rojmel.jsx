@@ -34,35 +34,35 @@ const InventoryEditor = ({ inventory, allSizes, onSave, onCancel }) => {
   };
 
   return (
-    <div className="p-4 bg-white rounded-lg shadow">
+    <div className="p-2 sm:p-4 bg-white rounded-lg shadow">
       <div className="space-y-4">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4">
           {allSizes.map(size => (
             <div key={size} className="flex items-center space-x-2">
-              <label>Size {size}:</label>
+              <label className="text-sm sm:text-base">Size {size}:</label>
               <input
                 type="number"
                 value={editedInventory.sizeQuantities[size]}
                 onChange={(e) => handleSizeChange(size, e)}
-                className="border rounded px-2 py-1 w-24"
+                className="border rounded px-2 py-1 w-20 sm:w-24 text-sm sm:text-base"
               />
             </div>
           ))}
         </div>
-        <div className="flex justify-between items-center pt-4 border-t">
-          <div className="font-semibold">
+        <div className="flex flex-col sm:flex-row justify-between items-center pt-4 border-t space-y-2 sm:space-y-0">
+          <div className="font-semibold text-sm sm:text-base">
             Total Inventory: {calculateTotal(editedInventory.sizeQuantities).toLocaleString()}
           </div>
           <div className="flex space-x-2">
             <button
               onClick={onCancel}
-              className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg flex items-center space-x-1"
+              className="px-3 sm:px-4 py-1.5 sm:py-2 text-gray-600 hover:bg-gray-100 rounded-lg flex items-center space-x-1 text-sm sm:text-base"
             >
               <span>Cancel</span>
             </button>
             <button
               onClick={handleSubmit}
-              className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg flex items-center space-x-1"
+              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg flex items-center space-x-1 text-sm sm:text-base"
             >
               <span>Save</span>
             </button>
@@ -73,6 +73,14 @@ const InventoryEditor = ({ inventory, allSizes, onSave, onCancel }) => {
   );
 };
 
+const TableContainer = ({ children }) => (
+  <div className="overflow-x-auto -mx-4 sm:mx-0">
+    <div className="inline-block min-w-full align-middle px-4 sm:px-0">
+      {children}
+    </div>
+  </div>
+);
+
 const Rojmel = () => {
   const [userData, setUserData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -81,7 +89,7 @@ const Rojmel = () => {
   const [totalInventory, setTotalInventory] = useState({});
   const [isEditingInventory, setIsEditingInventory] = useState(false);
 
-  const API_BASE_URL = 'http://54.161.153.204:5000';
+  const API_BASE_URL = 'http://localhost:5000';
 
   useEffect(() => {
     const fetchData = async () => {
@@ -225,9 +233,9 @@ const Rojmel = () => {
   if (isLoading) {
     return (
       <Navbar>
-        <div className="flex justify-center items-center h-screen">
+        <div className="flex justify-center items-center min-h-screen p-4">
           <div className="bg-white rounded-lg shadow-md w-full max-w-4xl">
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               <div className="space-y-4">
                 <div className="h-8 w-full bg-gray-200 animate-pulse rounded"></div>
                 <div className="h-64 w-full bg-gray-200 animate-pulse rounded"></div>
@@ -242,9 +250,9 @@ const Rojmel = () => {
   if (error) {
     return (
       <Navbar>
-        <div className="flex justify-center items-center h-screen">
+        <div className="flex justify-center items-center min-h-screen p-4">
           <div className="bg-white rounded-lg shadow-md w-full max-w-4xl">
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
                 <strong className="font-bold">Error: </strong>
                 <span className="block sm:inline">{error}</span>
@@ -267,14 +275,14 @@ const Rojmel = () => {
 
   return (
     <Navbar>
-      <div className="container mx-auto p-8 space-y-8">
+      <div className="container mx-auto py-4 md:py-8 px-2 md:px-4 pt-20">
         <div className="bg-white rounded-lg shadow-md">
-          <div className="p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold">રોજમેલ(સ્ટોક)</h2>
+          <div className="p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 space-y-2 sm:space-y-0">
+              <h2 className="text-xl sm:text-2xl font-bold">રોજમેલ(સ્ટોક)</h2>
               <button
                 onClick={() => setIsEditingInventory(true)}
-                className="px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg flex items-center space-x-1"
+                className="px-3 sm:px-4 py-1.5 sm:py-2 text-blue-600 hover:bg-blue-50 rounded-lg flex items-center space-x-1 text-sm sm:text-base"
               >
                 <Edit2 className="w-4 h-4" />
                 <span>Edit Inventory</span>
@@ -289,135 +297,135 @@ const Rojmel = () => {
                 onCancel={() => setIsEditingInventory(false)}
               />
             ) : (
-              <div className="rounded-lg overflow-hidden border">
-                <table className="min-w-full">
+              <TableContainer>
+                <table className="min-w-full divide-y divide-gray-200">
                   <thead>
                     <tr className="bg-gray-50">
-                      <th className="px-6 py-3 text-left font-semibold">વિગત</th>
-                      <th className="px-6 py-3 text-left font-semibold">કુલ સ્ટોક</th>
+                      <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold">વિગત</th>
+                      <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold">કુલ સ્ટોક</th>
                       {allSizes.map(size => (
-                        <th key={size} className="px-6 py-3 text-left font-semibold">{size}</th>
+                        <th key={size} className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold">{size}</th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-gray-200">
                     <tr>
-                      <td className="px-6 py-4">કુલ ઈન્વેન્ટરી</td>
-                      <td className="px-6 py-4 font-semibold">
+                      <td className="px-3 sm:px-6 py-2 sm:py-4 text-xs sm:text-sm">કુલ ઈન્વેન્ટરી</td>
+                      <td className="px-3 sm:px-6 py-2 sm:py-4 font-semibold text-xs sm:text-sm">
                         {calculatedTotal.toLocaleString()}
                       </td>
                       {allSizes.map(size => (
-                        <td key={size} className="px-6 py-4 font-semibold">
+                        <td key={size} className="px-3 sm:px-6 py-2 sm:py-4 font-semibold text-xs sm:text-sm">
                           {(totalInventory.sizes?.[size] || 1000).toLocaleString()}
                         </td>
                       ))}
                     </tr>
                     <tr>
-                      <td className="px-6 py-4">બહાર ગયેલ સ્ટોક</td>
-                      <td className="px-6 py-4 font-semibold text-red-600">
+                      <td className="px-3 sm:px-6 py-2 sm:py-4 text-xs sm:text-sm">બહાર ગયેલ સ્ટોક</td>
+                      <td className="px-3 sm:px-6 py-2 sm:py-4 font-semibold text-red-600 text-xs sm:text-sm">
                         {summaries.totalBalance}
                       </td>
                       {allSizes.map(size => (
-                        <td key={size} className="px-6 py-4 font-semibold text-red-600">
+                        <td key={size} className="px-3 sm:px-6 py-2 sm:py-4 font-semibold text-red-600 text-xs sm:text-sm">
                           {summaries.sizeTotals[size] || 0}
                         </td>
                       ))}
                     </tr>
                     <tr className="bg-gray-50">
-                      <td className="px-6 py-4 font-bold">બાકી સ્ટોક</td>
-                      <td className="px-6 py-4 font-bold">
+                      <td className="px-3 sm:px-6 py-2 sm:py-4 font-bold text-xs sm:text-sm">બાકી સ્ટોક</td>
+                      <td className="px-3 sm:px-6 py-2 sm:py-4 font-bold textxs sm:text-sm">
                         {calculatedTotal - summaries.totalBalance}
                       </td>
                       {allSizes.map(size => (
-                        <td key={size} className="px-6 py-4 font-bold">
+                        <td key={size} className="px-3 sm:px-6 py-2 sm:py-4 font-bold text-xs sm:text-sm">
                           {(totalInventory.sizes?.[size] || 1000) - (summaries.sizeTotals[size] || 0)}
                         </td>
                       ))}
                     </tr>
                   </tbody>
                 </table>
-              </div>
+              </TableContainer>
             )}
           </div>
         </div>
 
         <div className="bg-white rounded-lg shadow-md">
-          <div className="p-6">
-            <div className="rounded-lg overflow-hidden border">
-              <table className="min-w-full">
+          <div className="p-4 sm:p-6">
+            <TableContainer>
+              <table className="min-w-full divide-y divide-gray-200">
                 <thead>
                   <tr className="bg-gray-50">
-                    <td colSpan="2" className="px-6 py-3 text-center">
+                    <td colSpan="2" className="px-3 sm:px-6 py-2 sm:py-3 text-center text-xs sm:text-sm">
                       <span className="font-semibold">કુલ ગ્રાહકો: {userData.length}</span>
                     </td>
-                    <td className="px-6 py-3 text-center">
+                    <td className="px-3 sm:px-6 py-2 sm:py-3 text-center text-xs sm:text-sm">
                       <span className="text-red-600 font-semibold">
                         {summaries.totalUdhar}
                       </span>
                     </td>
-                    <td className="px-6 py-3 text-center">
+                    <td className="px-3 sm:px-6 py-2 sm:py-3 text-center text-xs sm:text-sm">
                       <span className="text-green-600 font-semibold">
                         {summaries.totalJama}
                       </span>
                     </td>
-                    <td className="px-6 py-3 text-center">
+                    <td className="px-3 sm:px-6 py-2 sm:py-3 text-center text-xs sm:text-sm">
                       <span className={`font-semibold ${summaries.totalBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                         {summaries.totalBalance}
                       </span>
                     </td>
                     {allSizes.map(size => (
-                      <td key={size} className="px-6 py-3 text-center">
-                        <span className={`font-semibold ${summaries.sizeTotals[size]>= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {summaries.sizeTotals[size] || 0}
-                      </span>
-                    </td>
-                  ))}
-                </tr>
-                <tr className="bg-gray-50">
-                  <th className="px-6 py-3 text-left">ID</th>
-                  <th className="px-6 py-3 text-left">નામ</th>
-                  <th className="px-6 py-3 text-left">ઉધાર (U)</th>
-                  <th className="px-6 py-3 text-left">જમા (J)</th>
-                  <th className="px-6 py-3 text-left">બેલેન્સ</th>
-                  {allSizes.map(size => (
-                    <th key={size} className="px-6 py-3 text-left">{size}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {userData.map((user) => {
-                  const returnItems = userReturnItems[user.userId] || [];
-                  const currentStock = calculateCurrentStock(returnItems);
-                  const currentStockBySizes = calculateCurrentStockBySizes(returnItems);
-                  const { totalU, totalJ } = calculateTotals(returnItems);
-
-                  return (
-                    <tr key={user.userId} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 text-center">{user.userId}</td>
-                      <td className="px-6 py-4">{user.name}</td>
-                      <td className="px-6 py-4 text-center text-red-600 font-semibold">{totalU}</td>
-                      <td className="px-6 py-4 text-center text-green-600 font-semibold">{totalJ}</td>
-                      <td className="px-6 py-4 text-center font-semibold">
-                        <span className={currentStock >= 0 ? 'text-green-600' : 'text-red-600'}>
-                          {currentStock}
+                      <td key={size} className="px-3 sm:px-6 py-2 sm:py-3 text-center text-xs sm:text-sm">
+                        <span className={`font-semibold ${summaries.sizeTotals[size] >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {summaries.sizeTotals[size] || 0}
                         </span>
                       </td>
-                      {allSizes.map(size => (
-                        <td key={size} className="px-6 py-4 text-center font-semibold">
-                          <span className={currentStockBySizes[size] >= 0 ? 'text-green-600' : 'text-red-600'}>
-                            {currentStockBySizes[size] || 0}
+                    ))}
+                  </tr>
+                  <tr className="bg-gray-50">
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold">ID</th>
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold">નામ</th>
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold">ઉધાર (U)</th>
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold">જમા (J)</th>
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold">બેલેન્સ</th>
+                    {allSizes.map(size => (
+                      <th key={size} className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold">{size}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {userData.map((user) => {
+                    const returnItems = userReturnItems[user.userId] || [];
+                    const currentStock = calculateCurrentStock(returnItems);
+                    const currentStockBySizes = calculateCurrentStockBySizes(returnItems);
+                    const { totalU, totalJ } = calculateTotals(returnItems);
+
+                    return (
+                      <tr key={user.userId} className="hover:bg-gray-50">
+                        <td className="px-3 sm:px-6 py-2 sm:py-4 text-center text-xs sm:text-sm">{user.userId}</td>
+                        <td className="px-3 sm:px-6 py-2 sm:py-4 text-xs sm:text-sm">{user.name}</td>
+                        <td className="px-3 sm:px-6 py-2 sm:py-4 text-center text-red-600 font-semibold text-xs sm:text-sm">{totalU}</td>
+                        <td className="px-3 sm:px-6 py-2 sm:py-4 text-center text-green-600 font-semibold text-xs sm:text-sm">{totalJ}</td>
+                        <td className="px-3 sm:px-6 py-2 sm:py-4 text-center font-semibold text-xs sm:text-sm">
+                          <span className={currentStock >= 0 ? 'text-green-600' : 'text-red-600'}>
+                            {currentStock}
                           </span>
                         </td>
-                      ))}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                        {allSizes.map(size => (
+                          <td key={size} className="px-3 sm:px-6 py-2 sm:py-4 text-center font-semibold text-xs sm:text-sm">
+                            <span className={currentStockBySizes[size] >= 0 ? 'text-green-600' : 'text-red-600'}>
+                              {currentStockBySizes[size] || 0}
+                            </span>
+                          </td>
+                        ))}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </TableContainer>
           </div>
         </div>
       </div>
-    </div>
     </Navbar>
   );
 };

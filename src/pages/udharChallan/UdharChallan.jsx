@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "../../components/header/Navbar";
 import axios from "axios";
-import { usePDF } from "react-to-pdf";
+import html2pdf from 'html2pdf.js';
 import SingleSelectionChecklist from "../../components/singleSelectionCheckList/SingleSelectionCheckList";
 import rightImage1 from "../../assets/UdharReceiptTemplate.jpg";
 
@@ -11,10 +11,24 @@ const UdharChallan = () => {
     return new Date().toISOString().split("T")[0];
   };
 
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    }).split('/').join('-');
+  };
+
   const [userData, setUserData] = useState([]);
-  const [, setReturnItems] = useState([]);
+  const [returnItems, setReturnItems] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
+  const [showNewUserModal, setShowNewUserModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+
   const [formData, setFormData] = useState({
-    receiptNumber: "RU-", // Initialize with required prefix
+    receiptNumber: "RU-",
     date: getCurrentDate(),
     userId: "",
     name: "",
@@ -37,58 +51,183 @@ const UdharChallan = () => {
     selectedMarkOption: "",
   });
 
-  const [suggestions, setSuggestions] = useState([]);
-  const [showNewUserModal, setShowNewUserModal] = useState(false);
   const [newUser, setNewUser] = useState({
     userId: "",
     name: "",
     site: "",
     phone: "",
   });
-  const { toPDF, targetRef } = usePDF({ filename: formData?.receiptNumber });
+
+  const generatePDF = async () => {
+    try {
+      // Create the HTML content for the receipt
+      const content = `
+        <html>
+          <head>
+            <style>
+              @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;700&display=swap');
+              body {
+                font-family: 'Noto Sans Gujarati', sans-serif;
+                margin: 0;
+                padding: 0;
+              }
+              .container {
+                position: relative;
+                width: 210mm; /* A4 width */
+                height: 297mm; /* A4 height */
+                overflow: hidden; /* Ensure content doesn't overflow */
+                box-sizing: border-box;
+                padding: 10mm; /* Add some padding for aesthetics */
+              }
+              .receipt-header {
+                text-align: center;
+                margin-bottom: 20px;
+              }
+              .user-details {
+                margin-bottom: 20px;
+              }
+              .items-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 20px;
+              }
+              .items-table th, .items-table td {
+                padding: 8px;
+                text-align: center;
+              }
+              .watermark {
+                position: absolute;
+                top: 30px;
+                right : 0px;
+                width: 100%;
+                height: 95%;
+                z-index: -1;
+              }
+              .watermark img {
+                width: 100%;
+                height: 100%;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="watermark">
+                <img src="${rightImage1}" alt="Watermark">
+              </div>
+              <div>
+                <p style="position: absolute; top: 260px; left: 165px; font-weight: bold; font-size: 1rem;" >${formData.receiptNumber}</p>
+                <p style="position: absolute; top: 260px; left: 570px; font-weight: bold; font-size: 1rem;" >${formatDate(formData.date)}</p>
+              </div>
+              <div class="user-details">
+                <p style="position: absolute; top: 312px; left: 615px; font-weight: bold; font-size: 1.2rem;" >${formData.userId}</p>
+                <p style="position: absolute; top: 312px; left: 145px; font-weight: bold; font-size: 1.2rem;" >${formData.name}</p>
+                <p style="position: absolute; top: 342px; left: 145px; font-weight: bold; font-size: 1.2rem;" >${formData.site}</p>
+                <p style="position: absolute; top: 400px; left: 145px; font-weight: bold; font-size: 1.2rem;" >${formData.phone}</p>
+              </div>
+                <p style="position: absolute; top: 490px; left: 240px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[0]?.total || "&nbsp;"}</p>
+                <p style="position: absolute; top: 530px; left: 240px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[1]?.total || "&nbsp;"}</p>
+                <p style="position: absolute; top: 570px; left: 240px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[2]?.total || "&nbsp;"}</p>
+                <p style="position: absolute; top: 610px; left: 240px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[3]?.total || "&nbsp;"}</p>
+                <p style="position: absolute; top: 650px; left: 240px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[4]?.total || "&nbsp;"}</p>
+                <p style="position: absolute; top: 610px; left: 240px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[3]?.total || "&nbsp;"}</p>
+                <p style="position: absolute; top: 610px; left: 240px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[3]?.total || "&nbsp;"}</p>
+                <p style="position: absolute; top: 690px; left: 240px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[5]?.total || "&nbsp;"}</p>
+                <p style="position: absolute; top: 730px; left: 240px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[6]?.total || "&nbsp;"}</p>
+                <p style="position: absolute; top: 770px; left: 240px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[7]?.total || "&nbsp;"}</p>
+                <p style="position: absolute; top: 810px; left: 240px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[8]?.total || "&nbsp;"}</p>
+                <p style="position: absolute; top: 490px; left: 400px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[0]?.mark || "&nbsp;"}</p>
+                <p style="position: absolute; top: 530px; left: 400px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[1]?.mark || "&nbsp;"}</p>
+                <p style="position: absolute; top: 570px; left: 400px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[2]?.mark || "&nbsp;"}</p>
+                <p style="position: absolute; top: 610px; left: 400px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[3]?.mark || "&nbsp;"}</p>
+                <p style="position: absolute; top: 650px; left: 400px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[4]?.mark || "&nbsp;"}</p>
+                <p style="position: absolute; top: 610px; left: 400px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[3]?.mark || "&nbsp;"}</p>
+                <p style="position: absolute; top: 610px; left: 400px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[3]?.mark || "&nbsp;"}</p>
+                <p style="position: absolute; top: 690px; left: 400px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[5]?.mark || "&nbsp;"}</p>
+                <p style="position: absolute; top: 730px; left: 400px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[6]?.mark || "&nbsp;"}</p>
+                <p style="position: absolute; top: 770px; left: 400px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[7]?.mark || "&nbsp;"}</p>
+                <p style="position: absolute; top: 810px; left: 400px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[8]?.mark || "&nbsp;"}</p>
+                <p style="position: absolute; top: 443px; left: 390px; font-weight: bold; font-size: 1.4rem; color: white;">${formData.selectedMarkOption}</p>
+                <p style="position: absolute; top: 845px; left: 240px; font-weight: bold; font-size: 1.2rem;">${formData.grandTotal}</p>
+                <p style="position: absolute; top: 982px; left: 445px; font-weight: bold; font-size: 1.2rem;">${formData.grandTotal}</p>
+          </body>
+        </html>
+      `;
+  
+      // Create a temporary container
+      const container = document.createElement('div');
+      container.innerHTML = content;
+      document.body.appendChild(container);
+  
+      // Configure PDF options
+      const options = {
+        margin: [0, 0, 0, 0],
+        filename: `${formData.receiptNumber}_${formatDate(formData.date)}.pdf`,
+        image: { type: 'jpeg', quality: 1 },
+        html2canvas: { scale: 2.5, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      };
+  
+      // Generate PDF
+      await html2pdf().set(options).from(container).save();
+  
+      // Clean up
+      document.body.removeChild(container);
+    } catch (error) {
+      console.error('PDF Generation Error:', error);
+      throw new Error('Error generating PDF. Please try again.');
+    }
+  };
+
+  const apiCall = async (method, url, data = null) => {
+    try {
+      const response = await axios({
+        method,
+        url: `http://localhost:5000${url}`,
+        data,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error(`API Error (${url}):`, error);
+      const errorMessage = error.response?.data?.message || error.message || 'An error occurred';
+      throw new Error(errorMessage);
+    }
+  };
 
   useEffect(() => {
-    const fetchUsers = async () => {
+    const fetchInitialData = async () => {
       try {
-        const response = await axios.get("http://54.161.153.204:5000/users");
-        setUserData(response.data);
+        const [users, items] = await Promise.all([
+          apiCall('get', '/users'),
+          apiCall('get', '/return-items')
+        ]);
+        setUserData(users);
+        setReturnItems(items);
       } catch (error) {
-        console.error("Error fetching users:", error);
-        alert("Failed to fetch users");
+        setError(error.message);
       }
     };
 
-    const fetchReturnItems = async () => {
-      try {
-        const response = await axios.get("http://54.161.153.204:5000/return-items");
-        setReturnItems(response.data);
-      } catch (error) {
-        console.error("Error fetching return items:", error);
-        alert("Failed to fetch return items");
-      }
-    };
-
-    fetchUsers();
-    fetchReturnItems();
+    fetchInitialData();
   }, []);
 
-  // Modified handleInputChange to handle manual receipt number
   const handleInputChange = (e) => {
     const { name, value } = e.target;
 
     if (name === "receiptNumber") {
-      // Ensure the RU- prefix is maintained
       const prefix = "RU-";
       const newValue = value.startsWith(prefix)
         ? value
         : prefix + value.replace(prefix, "");
 
-      setFormData((prev) => ({
+      setFormData(prev => ({
         ...prev,
         [name]: newValue,
       }));
     } else {
-      setFormData((prev) => ({
+      setFormData(prev => ({
         ...prev,
         [name]: value,
       }));
@@ -96,12 +235,11 @@ const UdharChallan = () => {
 
     if (name === "userId") {
       const filteredSuggestions = userData
-        .filter(
-          (user) =>
-            user.userId.toLowerCase().includes(value.toLowerCase()) ||
-            user.name.toLowerCase().includes(value.toLowerCase())
+        .filter(user => 
+          user.userId.toLowerCase().includes(value.toLowerCase()) ||
+          user.name.toLowerCase().includes(value.toLowerCase())
         )
-        .map((user) => ({
+        .map(user => ({
           ...user,
           displayText: `${user.userId} - ${user.name}`,
         }))
@@ -111,29 +249,16 @@ const UdharChallan = () => {
     }
   };
 
-  const handleSuggestionSelect = (user) => {
-    setFormData((prevState) => ({
-      ...prevState,
-      userId: user.userId,
-      name: user.name,
-      site: user.site || "",
-      phone: user.phone || "",
-    }));
-    setSuggestions([]);
-  };
-
-  // Modified handleNewUserChange to properly handle phone input
   const handleNewUserChange = (e) => {
     const { name, value } = e.target;
     if (name === "phone") {
-      // Only allow digits and limit to 10 characters
       const sanitizedValue = value.replace(/\D/g, "").slice(0, 10);
-      setNewUser((prev) => ({
+      setNewUser(prev => ({
         ...prev,
         [name]: sanitizedValue,
       }));
     } else {
-      setNewUser((prev) => ({
+      setNewUser(prev => ({
         ...prev,
         [name]: value,
       }));
@@ -147,13 +272,8 @@ const UdharChallan = () => {
     }
 
     try {
-      // Include the phone number in the request
-      const response = await axios.post("http://54.161.153.204:5000/users", {
-        ...newUser,
-        phone: newUser.phone || "", // Ensure phone is included even if empty
-      });
-
-      setUserData((prev) => [...prev, response.data]);
+      const response = await apiCall('post', '/users', newUser);
+      setUserData(prev => [...prev, response]);
       setShowNewUserModal(false);
       setNewUser({
         userId: "",
@@ -161,50 +281,44 @@ const UdharChallan = () => {
         site: "",
         phone: "",
       });
-
       alert("User Added Successfully!");
     } catch (error) {
-      console.error("Error adding user:", error);
-      alert(error.response?.data?.message || "Failed to add user");
+      alert(error.message);
     }
+  };
+
+  const handleSuggestionSelect = (user) => {
+    setFormData(prev => ({
+      ...prev,
+      userId: user.userId,
+      name: user.name,
+      site: user.site || "",
+      phone: user.phone || "",
+    }));
+    setSuggestions([]);
   };
 
   const handleSizeInputChange = (index, e) => {
     const { name, value } = e.target;
+    const numericValue = value.replace(/[^0-9]/g, '');
 
-    setFormData((prevState) => {
-      const updatedSizes = [...prevState.sizes];
+    setFormData(prev => {
+      const updatedSizes = [...prev.sizes];
       updatedSizes[index] = {
         ...updatedSizes[index],
-        [name]: value,
+        [name]: numericValue,
       };
 
-      const handleSizeChange = (index, field, value) => {
-        const newSizes = [...formData.sizes];
-        newSizes[index][field] = value;
-
-        const newTotal = calculateGrandTotal(newSizes);
-
-        setFormData((prev) => ({
-          ...prev,
-          sizes: newSizes,
-          grandTotal: newTotal,
-        }));
-      };
-
-      const total =
-        (parseInt(updatedSizes[index].pisces) || 0) +
-        (parseInt(updatedSizes[index].mark) || 0);
+      const total = (parseInt(updatedSizes[index].pisces) || 0) +
+                   (parseInt(updatedSizes[index].mark) || 0);
       updatedSizes[index].total = total.toString();
 
-      const grandTotal = updatedSizes.reduce(
-        (acc, curr) =>
-          acc + (parseInt(curr.pisces) || 0) + (parseInt(curr.mark) || 0),
-        0
+      const grandTotal = updatedSizes.reduce((acc, curr) =>
+        acc + (parseInt(curr.pisces) || 0) + (parseInt(curr.mark) || 0), 0
       );
 
       return {
-        ...prevState,
+        ...prev,
         sizes: updatedSizes,
         grandTotal: grandTotal.toString(),
         total: grandTotal.toString(),
@@ -214,223 +328,416 @@ const UdharChallan = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData?.userId || !formData?.name) {
+    if (!formData.userId || !formData.name) {
       alert("User ID and Name are required!");
       return;
     }
 
-    // Prepare comprehensive submission data
-    const submissionData = {
-      receiptNumber: formData?.receiptNumber,
-      date: new Date(formData?.date).toISOString(), // Format date properly
-      userId: formData?.userId,
-      name: formData?.name,
-      site: formData?.site || "",
-      phone: formData?.phone || "",
-      sizes: formData?.sizes.map((size) => ({
-        size: size.size,
-        pisces: parseInt(size.pisces) || 0,
-        mark: parseInt(size.mark) || 0,
-        total: parseInt(size.total) || 0,
-      })),
-      total: parseInt(formData?.total) || 0,
-      grandTotal: parseInt(formData?.grandTotal) || 0,
-      notes: formData?.notes || "",
-      metadata: {
-        createdAt: new Date().toISOString(),
-        fullReceiptDetails: JSON.stringify({
-          receiptNumber: formData?.receiptNumber,
-          items: formData?.sizes,
-        }),
-      },
-      selectedMarkOption: formData?.selectedMarkOption,
-    };
+    setIsSubmitting(true);
+    setError(null);
 
     try {
-      // Log the data being sent
-      console.log("Submitting data:", submissionData);
+      const submissionData = {
+        receiptNumber: formData.receiptNumber,
+        date: new Date(formData.date).toISOString(),
+        userId: formData.userId,
+        name: formData.name,
+        site: formData.site || "",
+        phone: formData.phone || "",
+        sizes: formData.sizes.map(size => ({
+          size: size.size,
+          pisces: parseInt(size.pisces) || 0,
+          mark: parseInt(size.mark) || 0,
+          total: parseInt(size.total) || 0,
+        })),
+        total: parseInt(formData.total) || 0,
+        grandTotal: parseInt(formData.grandTotal) || 0,
+        notes: formData.notes || "",
+        selectedMarkOption: formData.selectedMarkOption,
+        metadata: {
+          createdAt: new Date().toISOString(),
+        },
+      };
 
-      const response = await axios.post(
-        "http://54.161.153.204:5000/return-items",
-        submissionData,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      // First submit the data
+      const response = await apiCall('post', '/return-items', submissionData);
+      
+      // Then generate the PDF
+      await generatePDF();
+      
+      alert("Return Item Submitted Successfully!");
 
-      console.log("Server response:", response.data);
+      // Reset form after successful submission
+      setFormData(prev => ({
+        ...prev,
+        receiptNumber: `RU-${Date.now()}`,
+        userId: "",
+        name: "",
+        site: "",
+        phone: "",
+        sizes: prev.sizes.map(size => ({
+          ...size,
+          pisces: "",
+          mark: "",
+          total: ""
+        })),
+        total: "",
+        grandTotal: "",
+        notes: "",
+        selectedMarkOption: "",
+      }));
 
-      // Only proceed if we get a successful response
-      if (response.data) {
-        alert("Return Item Submitted Successfully!");
-        toPDF();
-
-        // Reset form (using the corrected version from above)
-        setFormData({
-          receiptNumber: generateReceiptNumber(),
-          date: formData.date,
-          userId: "",
-          name: "",
-          site: "",
-          phone: "",
-          sizes: [
-            { size: "2 X 3", pisces: "", mark: "", total: "" },
-            { size: "21 X 3", pisces: "", mark: "", total: "" },
-            { size: "18 X 3", pisces: "", mark: "", total: "" },
-            { size: "15 X 3", pisces: "", mark: "", total: "" },
-            { size: "12 X 3", pisces: "", mark: "", total: "" },
-            { size: "9 X 3", pisces: "", mark: "", total: "" },
-            { size: "પતરા", pisces: "", mark: "", total: "" },
-            { size: "2 X 2", pisces: "", mark: "", total: "" },
-            { size: "2 ફુટ", pisces: "", mark: "", total: "" },
-          ],
-          total: "",
-          grandTotal: "",
-          notes: "",
-          selectedMarkOption: "",
-        });
-
-        setReturnItems((prev) => [response.data, ...prev]);
-      }
+      setReturnItems(prev => [response, ...prev]);
     } catch (error) {
-      console.error("Error submitting return item:", error);
-      alert(error.response?.data?.message || "Failed to submit return item");
+      setError(error.message);
+      alert(error.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  return (
-    <Navbar>
-      <div className="bg-purple-100 w-full min-screen overflow-auto flex flex-col justify-center items-center p-6">
-        <form
-          onSubmit={handleSubmit}
-          className="bg-yellow-100 border-2 border-red-600 w-[800px] p-6 rounded-lg relative"
-        >
-          {/* Header */}
-          <div className="border-b-2 border-red-600 pb-4 flex justify-between items-center">
-            <h1 className="text-red-600 text-2xl font-bold">ઉધાર ચલણ</h1>
-            <button
-              type="button"
-              onClick={() => setShowNewUserModal(true)}
-              className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-            >
-              Add New User
-            </button>
+//   return (
+//     <Navbar>
+//       <div className="bg-purple-100 w-full min-screen overflow-auto flex flex-col justify-center items-center p-6">
+//         {error && (
+//           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+//             {error}
+//           </div>
+//         )}
+
+//         <form
+//           onSubmit={handleSubmit}
+//           className="bg-yellow-100 border-2 border-red-600 w-[800px] p-6 rounded-lg relative"
+//         >
+//           {/* Header */}
+//           <div className="border-b-2 border-red-600 pb-4 flex justify-between items-center">
+//             <h1 className="text-red-600 text-2xl font-bold">ઉધાર ચલણ</h1>
+//             <div className="flex gap-2">
+//               <button
+//                 type="button"
+//                 onClick={() => setShowNewUserModal(true)}
+//                 className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+//               >
+//                 Add New User
+//               </button>
+//             </div>
+//           </div>
+
+//           {/* Details Section */}
+//           <div className="mt-4 border-b-2 border-red-600 pb-4">
+//             <div className="flex justify-between mb-2">
+//               <div className="flex">
+//                 <label className="text-red-600 font-bold mr-2">ચલણ નંબર:</label>
+//                 <input
+//                   type="text"
+//                   name="receiptNumber"
+//                   value={formData.receiptNumber}
+//                   onChange={handleInputChange}
+//                   className="bg-yellow-100 text-red-600 border-b-2 border-red-600"
+//                   placeholder="RU-"
+//                 />
+//               </div>
+
+//               <div className="flex">
+//                 <label className="text-red-600 font-bold mr-2">તારીખ:</label>
+//                 <input
+//                   type="date"
+//                   name="date"
+//                   value={formData.date}
+//                   onChange={handleInputChange}
+//                   className="bg-yellow-100 text-red-600"
+//                 />
+//               </div>
+//             </div>
+
+//             <div className="mb-2 relative">
+//               <label className="text-red-600 font-bold">ID:</label>
+//               <input
+//                 type="text"
+//                 name="userId"
+//                 value={formData.userId}
+//                 onChange={handleInputChange}
+//                 className="border-b-2 border-red-600 outline-none bg-yellow-100 w-full text-red-600"
+//                 placeholder="Enter User ID"
+//                 required
+//               />
+//               {suggestions.length > 0 && (
+//                 <div className="absolute z-10 w-full bg-white border border-red-600 rounded-b-lg shadow-lg">
+//                   {suggestions.map((user, index) => (
+//                     <div
+//                       key={index}
+//                       onClick={() => handleSuggestionSelect(user)}
+//                       className="p-2 hover:bg-yellow-100 cursor-pointer"
+//                     >
+//                       {user.displayText}
+//                     </div>
+//                   ))}
+//                 </div>
+//               )}
+//             </div>
+
+//             <div className="mb-2">
+//               <label className="text-red-600 font-bold">નામ:</label>
+//               <input
+//                 type="text"
+//                 name="name"
+//                 value={formData.name}
+//                 onChange={handleInputChange}
+//                 className="border-b-2 border-red-600 outline-none bg-yellow-100 w-full text-red-600"
+//                 placeholder="Enter Name"
+//                 required
+//               />
+//             </div>
+
+//             <div className="mb-2">
+//               <label className="text-red-600 font-bold">સાઇડ:</label>
+//               <input
+//                 type="text"
+//                 name="site"
+//                 value={formData.site}
+//                 onChange={handleInputChange}
+//                 className="border-b-2 border-red-600 outline-none bg-yellow-100 w-full text-red-600"
+//                 placeholder="Enter Site Name"
+//               />
+//             </div>
+
+//             <div className="mb-2">
+//               <label className="text-red-600 font-bold">મોબાઇલ:</label>
+//               <input
+//                 type="text"
+//                 name="phone"
+//                 value={formData.phone}
+//                 onChange={handleInputChange}
+//                 className="border-b-2 border-red-600 outline-none bg-yellow-100 w-full text-red-600"
+//                 placeholder="Enter Phone Number"
+//               />
+//             </div>
+//           </div>
+
+//           {/* Table */}
+//           <div className="flex justify-center items-center mt-4">
+//             <table className="table-auto w-full border-collapse border-2 border-red-600">
+//               <thead>
+//                 <tr>
+//                   <th className="border border-red-600 bg-red-600 text-white p-2">
+//                     સાઈઝ
+//                   </th>
+//                   <th className="border border-red-600 bg-red-600 text-white p-2">
+//                     કુલ
+//                   </th>
+//                   <th className="border border-red-600 bg-red-600 text-white p-2">
+//                     પ્લેટનંગ
+//                   </th>
+//                   <th className="border border-red-600 bg-red-600 text-white p-2">
+//                     <SingleSelectionChecklist
+//                       formData={formData}
+//                       setFormData={setFormData}
+//                     />
+//                   </th>
+//                 </tr>
+//               </thead>
+//               <tbody>
+//                 {formData.sizes.map((sizeItem, index) => (
+//                   <tr key={index}>
+//                     <td className="border border-red-600 p-2 text-red-600 text-center">
+//                       {sizeItem.size}
+//                     </td>
+//                     <td className="border border-red-600 p-2 text-red-600 font-bold text-center">
+//                       {(parseInt(sizeItem.pisces) || 0) + (parseInt(sizeItem.mark) || 0)}
+//                     </td>
+//                     <td className="border border-red-600 p-2 text-center">
+//                       <input
+//                         type="text"
+//                         name="pisces"
+//                         value={sizeItem.pisces}
+//                         onChange={(e) => handleSizeInputChange(index, e)}
+//                         className="w-full bg-yellow-100 outline-none text-red-600"
+//                         placeholder="Enter Quantity"
+//                       />
+//                     </td>
+//                     <td className="border border-red-600 p-2 text-center">
+//                       <input
+//                         type="text"
+//                         name="mark"
+//                         value={sizeItem.mark}
+//                         onChange={(e) => handleSizeInputChange(index, e)}
+//                         className="w-full bg-yellow-100 outline-none text-red-600"
+//                         placeholder="Enter Marks"
+//                       />
+//                     </td>
+//                   </tr>
+//                 ))}
+//                 <tr>
+//                   <td className="border border-red-600 p-2 text-red-600 font-bold text-center">
+//                     કુલ નંગ
+//                   </td>
+//                   <td className="border border-red-600 p-2 font-bold text-red-600 text-center">
+//                     {formData.grandTotal}
+//                   </td>
+//                   <td className=""></td>
+//                   <td className=""></td>
+//                 </tr>
+//               </tbody>
+//             </table>
+//           </div>
+
+//           {/* Notes Section */}
+//           <div className="mt-4">
+//             <textarea
+//               name="notes"
+//               value={formData.notes}
+//               onChange={handleInputChange}
+//               rows="4"
+//               placeholder="Additional Notes"
+//               className="w-full border border-red-600 bg-yellow-100 text-red-600 outline-none p-2"
+//             />
+//           </div>
+
+//           {/* Submit Button */}
+//           <div className="mt-4 text-center">
+//             <button
+//               type="submit"
+//               disabled={isSubmitting}
+//               className="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700 disabled:bg-red-300"
+//             >
+//               {isSubmitting ? "Submitting..." : "Submit Return"}
+//             </button>
+//           </div>
+//         </form>
+
+//         {/* New User Modal */}
+//         {showNewUserModal && (
+//           <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+//             <div className="bg-white p-6 rounded-lg w-96">
+//               <h2 className="text-xl font-bold mb-4">Add New User</h2>
+//               <div className="mb-4">
+//                 <label className="block text-gray-700 mb-2">User ID:</label>
+//                 <input
+//                   type="text"
+//                   name="userId"
+//                   value={newUser.userId}
+//                   onChange={handleNewUserChange}
+//                   className="w-full border rounded p-2"
+//                   required
+//                 />
+//               </div>
+//               <div className="mb-4">
+//                 <label className="block text-gray-700 mb-2">Name:</label>
+//                 <input
+//                   type="text"
+//                   name="name"
+//                   value={newUser.name}
+//                   onChange={handleNewUserChange}
+//                   className="w-full border rounded p-2"
+//                   required
+//                 />
+//               </div>
+//               <div className="mb-4">
+//                 <label className="block text-gray-700 mb-2">Site:</label>
+//                 <input
+//                   type="text"
+//                   name="site"
+//                   value={newUser.site}
+//                   onChange={handleNewUserChange}
+//                   className="w-full border rounded p-2"
+//                 />
+//               </div>
+//               <div className="mb-4">
+//                 <label className="block text-gray-700 mb-2">Phone:</label>
+//                 <input
+//                   type="text"
+//                   name="phone"
+//                   value={newUser.phone}
+//                   onChange={handleNewUserChange}
+//                   className="w-full border rounded p-2"
+//                 />
+//               </div>
+//               <div className="flex justify-end gap-2">
+//                 <button
+//                   type="button"
+//                   onClick={() => setShowNewUserModal(false)}
+//                   className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+//                 >
+//                   Cancel
+//                 </button>
+//                 <button
+//                   type="button"
+//                   onClick={handleAddNewUser}
+//                   className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+//                 >
+//                   Add User
+//                 </button>
+//               </div>
+//             </div>
+//           </div>
+//         )}
+//       </div>
+//     </Navbar>
+//   );
+// };
+
+// export default UdharChallan;
+
+return (
+  <Navbar>
+    <div className="bg-purple-100 w-full min-h-screen p-4 md:p-6 pt-20">
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4 mx-auto max-w-[800px]">
+          {error}
+        </div>
+      )}
+
+      <form
+        onSubmit={handleSubmit}
+        className="bg-yellow-100 border-2 border-red-600 w-full max-w-[800px] p-4 md:p-6 rounded-lg relative mx-auto"
+      >
+        {/* Header */}
+        <div className="border-b-2 border-red-600 pb-4 flex flex-col md:flex-row justify-between items-center gap-4">
+          <h1 className="text-red-600 text-xl md:text-2xl font-bold">ઉધાર ચલણ</h1>
+          <button
+            type="button"
+            onClick={() => setShowNewUserModal(true)}
+            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 w-full md:w-auto"
+          >
+            Add New User
+          </button>
+        </div>
+
+        {/* Details Section */}
+        <div className="mt-4 border-b-2 border-red-600 pb-4 space-y-4">
+          <div className="flex flex-col md:flex-row justify-between gap-4">
+            <div className="flex flex-col md:flex-row items-start md:items-center gap-2">
+              <label className="text-red-600 font-bold">ચલણ નંબર:</label>
+              <input
+                type="text"
+                name="receiptNumber"
+                value={formData.receiptNumber}
+                onChange={handleInputChange}
+                className="bg-yellow-100 text-red-600 border-b-2 border-red-600 w-full md:w-auto"
+                placeholder="RU-"
+              />
+            </div>
+
+            <div className="flex flex-col md:flex-row items-start md:items-center gap-2">
+              <label className="text-red-600 font-bold">તારીખ:</label>
+              <input
+                type="date"
+                name="date"
+                value={formData.date}
+                onChange={handleInputChange}
+                className="bg-yellow-100 text-red-600 w-full md:w-auto"
+              />
+            </div>
           </div>
-          {/* New User Modal */}
-          {showNewUserModal && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-              <div className="bg-yellow-100 p-6 rounded-lg w-[500px]">
-                <h2 className="text-red-600 text-xl font-bold mb-4">
-                  Add New User
-                </h2>
-                <div className="mb-4">
-                  <label className="block text-red-600 font-bold mb-2">
-                    User ID*
-                  </label>
-                  <input
-                    type="text"
-                    name="userId"
-                    value={newUser.userId}
-                    onChange={handleNewUserChange}
-                    className="w-full border-b-2 border-red-600 bg-yellow-100 text-red-600 outline-none"
-                    placeholder="Enter User ID"
-                    required
-                  />
-                </div>
-                <div className="mb-4">
-                  <label className="block text-red-600 font-bold mb-2">
-                    Name*
-                  </label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={newUser.name}
-                    onChange={handleNewUserChange}
-                    className="w-full border-b-2 border-red-600 bg-yellow-100 text-red-600 outline-none"
-                    placeholder="Enter Name"
-                    required
-                  />
-                </div>
-                <div className="mb-4">
-                  <label className="block text-red-600 font-bold mb-2">
-                    Site
-                  </label>
-                  <input
-                    type="text"
-                    name="site"
-                    value={newUser.site}
-                    onChange={handleNewUserChange}
-                    className="w-full border-b-2 border-red-600 bg-yellow-100 text-red-600 outline-none"
-                    placeholder="Enter Site"
-                  />
-                </div>
-                <div className="mb-2">
-                  <label className="text-red-600 font-bold">મોબાઇલ:</label>
-                  <input
-                    type="text"
-                    name="phone"
-                    value={newUser.phone}
-                    onChange={handleNewUserChange}
-                    className="w-full border-b-2 border-red-600 bg-yellow-100 text-red-600 outline-none"
-                    placeholder="Enter Phone Number"
-                    maxLength={10}
-                  />
-                </div>
-                <div className="flex justify-end space-x-4">
-                  <button
-                    type="button"
-                    onClick={() => setShowNewUserModal(false)}
-                    className="bg-gray-300 text-gray-700 px-4 py-2 rounded"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleAddNewUser}
-                    className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-                  >
-                    Add User
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
 
-          {/* Details Section */}
-          <div className="mt-4 border-b-2 border-red-600 pb-4">
-            <div className="flex justify-between mb-2">
-              <div className="flex">
-                <label className="text-red-600 font-bold mr-2">ચલણ નંબર:</label>
-                <input
-                  type="text"
-                  name="receiptNumber"
-                  value={formData.receiptNumber}
-                  onChange={handleInputChange}
-                  className="bg-yellow-100 text-red-600 border-b-2 border-red-600"
-                  placeholder="RU-"
-                />
-              </div>
-
-              <div className="flex">
-                <label className="text-red-600 font-bold mr-2">તારીખ:</label>
-                <input
-                  type="date"
-                  name="date"
-                  value={formData?.date}
-                  onChange={handleInputChange}
-                  className=" bg-yellow-100 text-red-600"
-                />
-              </div>
-            </div>
-
-            <div className="mb-2 relative">
-              <label className="text-red-600 font-bold">ID:</label>
+          {/* User Details Fields */}
+          <div className="space-y-4">
+            <div className="relative">
+              <label className="text-red-600 font-bold block mb-1">ID:</label>
               <input
                 type="text"
                 name="userId"
-                value={formData?.userId}
+                value={formData.userId}
                 onChange={handleInputChange}
                 className="border-b-2 border-red-600 outline-none bg-yellow-100 w-full text-red-600"
                 placeholder="Enter User ID"
@@ -451,60 +758,42 @@ const UdharChallan = () => {
               )}
             </div>
 
-            <div className="mb-2">
-              <label className="text-red-600 font-bold">નામ:</label>
-              <input
-                type="text"
-                name="name"
-                value={formData?.name}
-                onChange={handleInputChange}
-                className="border-b-2 border-red-600 outline-none bg-yellow-100 w-full text-red-600"
-                placeholder="Enter Name"
-                required
-              />
-            </div>
-
-            <div className="mb-2">
-              <label className="text-red-600 font-bold">સાઇડ:</label>
-              <input
-                type="text"
-                name="site"
-                value={formData?.site}
-                onChange={handleInputChange}
-                className="border-b-2 border-red-600 outline-none bg-yellow-100 w-full text-red-600"
-                placeholder="Enter Site Name"
-              />
-            </div>
-
-            <div className="mb-2">
-              <label className="text-red-600 font-bold">મોબાઇલ:</label>
-              <input
-                type="text"
-                name="phone"
-                value={formData?.phone}
-                onChange={handleInputChange}
-                className="border-b-2 border-red-600 outline-none bg-yellow-100 w-full text-red-600"
-                placeholder="Enter Phone Number"
-              />
-            </div>
+            {/* Other input fields */}
+            {['name', 'site', 'phone'].map((field) => (
+              <div key={field}>
+                <label className="text-red-600 font-bold block mb-1">
+                  {field === 'name' ? 'નામ:' : field === 'site' ? 'સાઇડ:' : 'મોબાઇલ:'}
+                </label>
+                <input
+                  type="text"
+                  name={field}
+                  value={formData[field]}
+                  onChange={handleInputChange}
+                  className="border-b-2 border-red-600 outline-none bg-yellow-100 w-full text-red-600"
+                  placeholder={`Enter ${field.charAt(0).toUpperCase() + field.slice(1)}`}
+                  required={field === 'name'}
+                />
+              </div>
+            ))}
           </div>
+        </div>
 
-          {/* Table */}
-          <div className="flex justify-center items-center mt-4">
-            <table className="table-auto w-full border-collapse border-2 border-red-600">
+        {/* Table Section */}
+        <div className="overflow-x-auto mt-4">
+          <div className="inline-block min-w-full align-middle">
+            <table className="min-w-full border-collapse border-2 border-red-600">
               <thead>
                 <tr>
-                  <th className="border border-red-600 bg-red-600 text-white p-2">
+                  <th className="border border-red-600 bg-red-600 text-white p-2 text-sm md:text-base">
                     સાઈઝ
                   </th>
-                  <th className="border border-red-600 bg-red-600 text-white p-2">
+                  <th className="border border-red-600 bg-red-600 text-white p-2 text-sm md:text-base">
                     કુલ
                   </th>
-                  <th className="border border-red-600 bg-red-600 text-white p-2">
+                  <th className="border border-red-600 bg-red-600 text-white p-2 text-sm md:text-base text-center">
                     પ્લેટનંગ
                   </th>
-                  <th className="border border-red-600 bg-red-600 text-white p-2">
-                    {/* Render the Checklist Component */}
+                  <th className="border border-red-600 bg-red-600 text-white p-2 text-sm md:text-base text-center">
                     <SingleSelectionChecklist
                       formData={formData}
                       setFormData={setFormData}
@@ -513,168 +802,118 @@ const UdharChallan = () => {
                 </tr>
               </thead>
               <tbody>
-                {formData?.sizes.map((sizeItem, index) => (
+                {formData.sizes.map((sizeItem, index) => (
                   <tr key={index}>
-                    <td className="border border-red-600 p-2 text-red-600 text-center">
+                    <td className="border border-red-600 p-2 text-red-600 text-center text-sm md:text-base">
                       {sizeItem.size}
                     </td>
-                    <td className="border border-red-600 p-2 text-red-600 font-bold text-center">
-                      {(parseInt(sizeItem.pisces) || 0) +
-                        (parseInt(sizeItem.mark) || 0)}
+                    <td className="border border-red-600 p-2 text-red-600 font-bold text-center text-sm md:text-base">
+                      {(parseInt(sizeItem.pisces) || 0) + (parseInt(sizeItem.mark) || 0)}
                     </td>
-                    <td className="border border-red-600 p-2 text-center">
+                    <td className="border border-red-600 p-2">
                       <input
                         type="text"
                         name="pisces"
                         value={sizeItem.pisces}
                         onChange={(e) => handleSizeInputChange(index, e)}
-                        className="w-full bg-yellow-100 outline-none text-red-600"
-                        placeholder="Enter Quantity"
+                        className="w-full bg-yellow-100 outline-none text-red-600 text-center text-sm md:text-base"
+                        placeholder="Qty"
                       />
                     </td>
-                    <td className="border border-red-600 p-2 text-center">
+                    <td className="border border-red-600 p-2">
                       <input
                         type="text"
                         name="mark"
                         value={sizeItem.mark}
                         onChange={(e) => handleSizeInputChange(index, e)}
-                        className="w-full bg-yellow-100 outline-none text-red-600"
-                        placeholder="Enter Marks"
+                        className="w-full bg-yellow-100 outline-none text-red-600 text-center text-sm md:text-base"
+                        placeholder="Marks"
                       />
                     </td>
                   </tr>
                 ))}
                 <tr>
-                  <td className="border border-red-600 p-2 text-red-600 font-bold text-center">
+                  <td className="border border-red-600 p-2 text-red-600 font-bold text-center text-sm md:text-base">
                     કુલ નંગ
                   </td>
-                  <td className="border border-red-600 p-2 font-bold text-red-600 text-center">
-                    {formData?.grandTotal}
+                  <td className="border border-red-600 p-2 font-bold text-red-600 text-center text-sm md:text-base">
+                    {formData.grandTotal}
                   </td>
-                  <td className=""></td>
-                  <td className=""></td>
+                  <td colSpan="2"></td>
                 </tr>
               </tbody>
             </table>
           </div>
+        </div>
 
-          {/* Notes Section */}
-          <div className="mt-4">
-            <textarea
-              name="notes"
-              value={formData?.notes}
-              onChange={handleInputChange}
-              rows="4"
-              placeholder="Additional Notes"
-              className="w-full border border-red-600 bg-yellow-100 text-red-600 outline-none p-2"
-            />
-          </div>
+        {/* Notes Section */}
+        <div className="mt-4">
+          <textarea
+            name="notes"
+            value={formData.notes}
+            onChange={handleInputChange}
+            rows="4"
+            placeholder="Additional Notes"
+            className="w-full border border-red-600 bg-yellow-100 text-red-600 outline-none p-2 text-sm md:text-base"
+          />
+        </div>
 
-          {/* Submit Button */}
-          <div className="mt-4 text-center">
-            <button
-              type="submit"
-              className="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700"
-            >
-              Submit Return
-            </button>
-          </div>
-        </form>
-        <div
-          ref={targetRef}
-          style={{
-            margin: "20px auto",
-            padding: "15px",
-            width: "800px",
-            boxShadow: "0px 0px 8px #ccc",
-          }}
-        >
-          {/* Background Image */}
-          <img src={rightImage1} alt="Receipt Background" className="w-full" />
-
-          {/* Input Details */}
-          <div
-            style={{
-              margin: "10px 0",
-              width: "550px",
-            }}
+        {/* Submit Button */}
+        <div className="mt-4 text-center">
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700 disabled:bg-red-300 w-full md:w-auto"
           >
-            {/* Receipt Number and Date */}
-        <div className="absolute top-[1400px] ">
-          <div className="ml-48 left-[200px] text-black-800">
-            <strong>{formData?.receiptNumber}</strong>
-          </div> 
+            {isSubmitting ? "Submitting..." : "ઉધાર નંગ"}
+          </button>
         </div>
-        <div className="absolute top-[1400px] ">
-          <div className="ml-[580px] text-black-800">
-          <strong>
-      {formData?.date ? new Date(formData.date).toLocaleDateString('en-GB', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-      }).split('/').join('-') : ''}
-    </strong>
-          </div>
-        </div>
-            {/* Name and ID */}
-        <div className="absolute top-[1450px] flex">
-          <div className="ml-40 left-[155px] text-black-800 ">
-          <strong style={{ fontSize: "20px" }}>{formData?.name}</strong>
-          </div>
-          <div className="absolute left-[626px] text-black-800">
-          <strong style={{ fontSize: "20px" }}>{formData?.userId}</strong>
-          </div>
-        </div>
-        
-        <div className="absolute top-[1483px]">
-          <div className="ml-40 left-[135px] text-blck-800">
-          <strong style={{ fontSize: "20px" }}>{formData?.site}</strong>
-          </div>
-        </div>
-        <div className="absolute top-[1536px]">
-          <div className="ml-40 left-[135px] text-blck-800">
-          <strong style={{ fontSize: "20px" }}>{formData?.phone}</strong>
-          </div>
-        </div>
-        <div className="absolute top-[1584px]">
-          <div className="absolute left-[390px] text-white">
-          <strong style={{ fontSize: "20px" }}>{formData?.selectedMarkOption}</strong>
-          </div>
-        </div>
-          </div>
+      </form>
 
-          <div className="absolute top-[1150px] left-[480px] w-[600px]">
-            {/* Table Data */}
-            <div className="absolute top-[480px] left-[310px] w-[600px]">
-              {formData?.sizes.map((item, index) => (
-                <div key={index} className="flex mb-[9px]">
-                  <div className="w-[100px] text-center text-black-800">
-                    <strong style={{ fontSize: "20px" }}>
-                      {(parseInt(item.pisces) || 0) +
-                        (parseInt(item.mark) || 0)}
-                    </strong>
-                  </div>
-                  <div className="w-[100px] ml-[50px] text-center text-black-800">
-                    <strong style={{ fontSize: "20px" }}>{item.mark}</strong>
-                  </div>
+      {/* New User Modal */}
+      {showNewUserModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4 z-50">
+          <div className="bg-white p-4 md:p-6 rounded-lg w-full max-w-md">
+            <h2 className="text-lg md:text-xl font-bold mb-4">Add New User</h2>
+            <div className="space-y-4">
+              {['userId', 'name', 'site', 'phone'].map((field) => (
+                <div key={field} className="mb-4">
+                  <label className="block text-gray-700 mb-2">
+                    {field.charAt(0).toUpperCase() + field.slice(1)}:
+                  </label>
+                  <input
+                    type="text"
+                    name={field}
+                    value={newUser[field]}
+                    onChange={handleNewUserChange}
+                    className="w-full border rounded p-2"
+                    required={field === 'userId' || field === 'name'}
+                  />
                 </div>
               ))}
-              <div className="absolute top-[340px] left-[34px] text-black-800 font-bold">
-                <strong style={{ fontSize: "25px" }}>
-                  {formData?.grandTotal}
-                </strong>
-              </div>
-              <div className="absolute top-[473px] left-[240px] text-black-800 font-bold">
-                <strong style={{ fontSize: "20px" }}>
-                  {formData?.grandTotal}
-                </strong>
+              <div className="flex flex-col md:flex-row justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowNewUserModal(false)}
+                  className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 w-full md:w-auto"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAddNewUser}
+                  className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 w-full md:w-auto"
+                >
+                  Add User
+                </button>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </Navbar>
-  );
+      )}
+    </div>
+  </Navbar>
+);
 };
 
 export default UdharChallan;

@@ -1,43 +1,97 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { Menu, X } from 'lucide-react';
 
-function ExpandableNavLayout({ children }) {
+function Navbar({ children }) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const location = useLocation();
+
+  // Detect mobile screen size
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const isActive = (path) => location.pathname === path;
 
+  const navItems = [
+    { to: "/", label: "Home", icon: "🏠", hoverColor: "hover:bg-blue-300 hover:text-blue-700" },
+    { to: "/udharchallan", label: "ઉધાર ચલણ", icon: "📝", hoverColor: "hover:bg-purple-300 hover:text-purple-700" },
+    { to: "/jamachallan", label: "જમા ચલણ", icon: "💰", hoverColor: "hover:bg-green-300 hover:text-green-700" },
+    { to: "/khatawahi", label: "ખાતાવહી", icon: "📊", hoverColor: "hover:bg-orange-300 hover:text-orange-700" },
+    { to: "/rojmel", label: "રોજમેલ(સ્ટોક)", icon: "📦", hoverColor: "hover:bg-pink-300 hover:text-pink-700" },
+    { to: "/bills", label: "બિલ", icon: "💳", hoverColor: "hover:bg-teal-300 hover:text-teal-700" }
+  ];
+
+  const handleToggle = () => {
+    if (isMobile) {
+      setIsExpanded(!isExpanded);
+    }
+  };
+
+  const handleLinkClick = () => {
+    if (isMobile) {
+      setIsExpanded(false);
+    }
+  };
+
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen relative">
+      {/* Mobile Toggle Button */}
+      {isMobile && (
+        <button
+          onClick={handleToggle}
+          className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-white shadow-lg"
+        >
+          {isExpanded ? (
+            <X className="w-6 h-6" />
+          ) : (
+            <Menu className="w-6 h-6" />
+          )}
+        </button>
+      )}
+
+      {/* Overlay for mobile */}
+      {isMobile && isExpanded && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-30"
+          onClick={handleToggle}
+        />
+      )}
+
       {/* Navbar */}
       <nav
-        className={`bg-transparent backdrop-blur-sm bg-opacity-20 text-gray-700 h-screen transition-all duration-300 ease-in-out border-r border-gray-200 sticky top-0
-          ${isExpanded ? 'w-64' : 'w-16'}`}
-        onMouseEnter={() => setIsExpanded(true)}
-        onMouseLeave={() => setIsExpanded(false)}
+        className={`
+          ${isMobile ? 'fixed' : 'sticky top-0'}
+          bg-white shadow-lg z-40 h-screen
+          transition-all duration-300 ease-in-out
+          ${isMobile ? (isExpanded ? 'translate-x-0' : '-translate-x-full') : ''}
+          ${!isMobile && (isExpanded ? 'w-64' : 'w-16')}
+        `}
+        onMouseEnter={() => !isMobile && setIsExpanded(true)}
+        onMouseLeave={() => !isMobile && setIsExpanded(false)}
       >
-        <ul className="flex flex-col h-full pt-4">
-          {[
-            { to: "/", label: "Home", icon: "🏠", hoverColor: "hover:bg-blue-300 hover:text-blue-700" },
-            { to: "/udharchallan", label: "ઉધાર ચલણ", icon: "📝", hoverColor: "hover:bg-purple-300 hover:text-purple-700" },
-            { to: "/jamachallan", label: "જમા ચલણ", icon: "💰", hoverColor: "hover:bg-green-300 hover:text-green-700" },
-            { to: "/khatawahi", label: "ખાતાવહી", icon: "📊", hoverColor: "hover:bg-orange-300 hover:text-orange-700" },
-            { to: "/rojmel", label: "રોજમેલ(સ્ટોક)", icon: "📦", hoverColor: "hover:bg-pink-300 hover:text-pink-700" },
-            { to: "/bills", label: "બિલ", icon: "💳", hoverColor: "hover:bg-teal-300 hover:text-teal-700" }
-          ].map((item, index) => (
-            <li key={index} className="w-full">
+        <ul className="flex flex-col h-full pt-16 md:pt-4">
+          {navItems.map((item, index) => (
+            <li key={index} className="w-full px-2">
               <Link
                 to={item.to}
+                onClick={handleLinkClick}
                 className={`
                   flex items-center
-                  ${isExpanded ? 'justify-start px-6' : 'justify-center'}
+                  ${isExpanded ? 'justify-start px-4' : 'justify-center'}
                   py-3
                   ${item.hoverColor}
                   transition-all duration-300 ease-in-out
-                  relative
-                  rounded-l-full
+                  rounded-lg md:rounded-l-full
                   my-1
-                  mx-2
                   ${isActive(item.to) ? 'bg-gray-100 font-semibold' : ''}
                   ${isActive(item.to) ? item.hoverColor.split(' ')[1] : ''}
                 `}
@@ -55,7 +109,7 @@ function ExpandableNavLayout({ children }) {
                 >
                   {item.label}
                 </span>
-                {!isExpanded && isActive(item.to) && (
+                {!isExpanded && !isMobile && isActive(item.to) && (
                   <div className="absolute left-14 bg-white px-3 py-1 rounded-md shadow-lg text-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     {item.label}
                   </div>
@@ -67,11 +121,11 @@ function ExpandableNavLayout({ children }) {
       </nav>
 
       {/* Main Content */}
-      <main className={`flex-1 transition-all duration-300 ease-in-out`}>
+      <main className={`flex-1 transition-all duration-300 ease-in-out ${isMobile && isExpanded ? 'opacity-50' : ''}`}>
         {children}
       </main>
     </div>
   );
 }
 
-export default ExpandableNavLayout;
+export default Navbar;
