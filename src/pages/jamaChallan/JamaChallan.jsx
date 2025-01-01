@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import Navbar from "../../components/header/Navbar";
 import axios from "axios";
-import html2pdf from 'html2pdf.js';
-import SingleSelectionChecklist from "../../components/singleSelectionCheckList/SingleSelectionCheckList";
+import html2canvas from 'html2canvas';
+import SingleSelectionChecklist from "../../components/singleSelectionCheckList/SingleSelectionCheckListJ";
 import rightImage1 from "../../assets/JamaReceiptTemplate.jpg";
 
-const JamaChallan = () => {
+const UdharChallan = () => {
   // Generate current date in YYYY-MM-DD format
   const getCurrentDate = () => {
     return new Date().toISOString().split("T")[0];
@@ -58,123 +58,109 @@ const JamaChallan = () => {
     phone: "",
   });
 
-  const generatePDF = async () => {
+  const generateReceiptContent = () => {
+    return `
+      <html>
+        <head>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;700&display=swap');
+            body {
+              font-family: 'Noto Sans Gujarati', sans-serif;
+              margin: 0;
+              padding: 0;
+            }
+            .container {
+              position: relative;
+              width: 210mm;
+              height: 297mm;
+              overflow: hidden;
+              box-sizing: border-box;
+              padding: 10mm;
+            }
+            .receipt-header {
+              text-align: center;
+              margin-bottom: 20px;
+            }
+            .user-details {
+              margin-bottom: 20px;
+            }
+            .items-table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 20px;
+            }
+            .items-table th, .items-table td {
+              padding: 8px;
+              text-align: center;
+            }
+            .watermark {
+              position: absolute;
+              top: 30px;
+              right: 0px;
+              width: 100%;
+              height: 95%;
+              z-index: -1;
+            }
+            .watermark img {
+              width: 100%;
+              height: 100%;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="watermark">
+              <img src="${rightImage1}" alt="Watermark">
+            </div>
+            <div>
+              <p style="position: absolute; top: 260px; left: 165px; font-weight: bold; font-size: 1rem;">${formData.receiptNumber}</p>
+              <p style="position: absolute; top: 260px; left: 570px; font-weight: bold; font-size: 1rem;">${formatDate(formData.date)}</p>
+            </div>
+            <div class="user-details">
+              <p style="position: absolute; top: 312px; left: 615px; font-weight: bold; font-size: 1.2rem;">${formData.userId}</p>
+              <p style="position: absolute; top: 312px; left: 145px; font-weight: bold; font-size: 1.2rem;">${formData.name}</p>
+              <p style="position: absolute; top: 342px; left: 145px; font-weight: bold; font-size: 1.2rem;">${formData.site}</p>
+              <p style="position: absolute; top: 400px; left: 145px; font-weight: bold; font-size: 1.2rem;">${formData.phone}</p>
+            </div>
+            ${formData.sizes.map((size, index) => `
+              <p style="position: absolute; top: ${490 + (index * 40)}px; left: 240px; font-weight: bold; font-size: 1.2rem; color: black;">${size.total || "&nbsp;"}</p>
+              <p style="position: absolute; top: ${490 + (index * 40)}px; left: 400px; font-weight: bold; font-size: 1.2rem; color: black;">${size.mark || "&nbsp;"}</p>
+            `).join('')}
+            <p style="position: absolute; top: 443px; left: 390px; font-weight: bold; font-size: 1.4rem; color: white;">${formData.selectedMarkOption}</p>
+            <p style="position: absolute; top: 845px; left: 240px; font-weight: bold; font-size: 1.2rem;">${formData.grandTotal}</p>
+            <p style="position: absolute; top: 982px; left: 445px; font-weight: bold; font-size: 1.2rem;">${formData.grandTotal}</p>
+          </div>
+        </body>
+      </html>
+    `;
+  };
+
+  const generateJPEG = async () => {
     try {
-      // Create the HTML content for the receipt
-      const content = `
-        <html>
-          <head>
-            <style>
-              @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;700&display=swap');
-              body {
-                font-family: 'Noto Sans Gujarati', sans-serif;
-                margin: 0;
-                padding: 0;
-              }
-              .container {
-                position: relative;
-                width: 210mm; /* A4 width */
-                height: 297mm; /* A4 height */
-                overflow: hidden; /* Ensure content doesn't overflow */
-                box-sizing: border-box;
-                padding: 10mm; /* Add some padding for aesthetics */
-              }
-              .receipt-header {
-                text-align: center;
-                margin-bottom: 20px;
-              }
-              .user-details {
-                margin-bottom: 20px;
-              }
-              .items-table {
-                width: 100%;
-                border-collapse: collapse;
-                margin-bottom: 20px;
-              }
-              .items-table th, .items-table td {
-                padding: 8px;
-                text-align: center;
-              }
-              .watermark {
-                position: absolute;
-                top: 30px;
-                right : 0px;
-                width: 100%;
-                height: 95%;
-                z-index: -1;
-              }
-              .watermark img {
-                width: 100%;
-                height: 100%;
-              }
-            </style>
-          </head>
-          <body>
-            <div class="container">
-              <div class="watermark">
-                <img src="${rightImage1}" alt="Watermark">
-              </div>
-              <div>
-                <p style="position: absolute; top: 260px; left: 165px; font-weight: bold; font-size: 1rem;" >${formData.receiptNumber}</p>
-                <p style="position: absolute; top: 260px; left: 570px; font-weight: bold; font-size: 1rem;" >${formatDate(formData.date)}</p>
-              </div>
-              <div class="user-details">
-                <p style="position: absolute; top: 312px; left: 615px; font-weight: bold; font-size: 1.2rem;" >${formData.userId}</p>
-                <p style="position: absolute; top: 312px; left: 145px; font-weight: bold; font-size: 1.2rem;" >${formData.name}</p>
-                <p style="position: absolute; top: 342px; left: 145px; font-weight: bold; font-size: 1.2rem;" >${formData.site}</p>
-                <p style="position: absolute; top: 400px; left: 145px; font-weight: bold; font-size: 1.2rem;" >${formData.phone}</p>
-              </div>
-                <p style="position: absolute; top: 490px; left: 240px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[0]?.total || "&nbsp;"}</p>
-                <p style="position: absolute; top: 530px; left: 240px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[1]?.total || "&nbsp;"}</p>
-                <p style="position: absolute; top: 570px; left: 240px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[2]?.total || "&nbsp;"}</p>
-                <p style="position: absolute; top: 610px; left: 240px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[3]?.total || "&nbsp;"}</p>
-                <p style="position: absolute; top: 650px; left: 240px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[4]?.total || "&nbsp;"}</p>
-                <p style="position: absolute; top: 610px; left: 240px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[3]?.total || "&nbsp;"}</p>
-                <p style="position: absolute; top: 610px; left: 240px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[3]?.total || "&nbsp;"}</p>
-                <p style="position: absolute; top: 690px; left: 240px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[5]?.total || "&nbsp;"}</p>
-                <p style="position: absolute; top: 730px; left: 240px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[6]?.total || "&nbsp;"}</p>
-                <p style="position: absolute; top: 770px; left: 240px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[7]?.total || "&nbsp;"}</p>
-                <p style="position: absolute; top: 810px; left: 240px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[8]?.total || "&nbsp;"}</p>
-                <p style="position: absolute; top: 490px; left: 400px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[0]?.mark || "&nbsp;"}</p>
-                <p style="position: absolute; top: 530px; left: 400px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[1]?.mark || "&nbsp;"}</p>
-                <p style="position: absolute; top: 570px; left: 400px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[2]?.mark || "&nbsp;"}</p>
-                <p style="position: absolute; top: 610px; left: 400px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[3]?.mark || "&nbsp;"}</p>
-                <p style="position: absolute; top: 650px; left: 400px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[4]?.mark || "&nbsp;"}</p>
-                <p style="position: absolute; top: 610px; left: 400px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[3]?.mark || "&nbsp;"}</p>
-                <p style="position: absolute; top: 610px; left: 400px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[3]?.mark || "&nbsp;"}</p>
-                <p style="position: absolute; top: 690px; left: 400px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[5]?.mark || "&nbsp;"}</p>
-                <p style="position: absolute; top: 730px; left: 400px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[6]?.mark || "&nbsp;"}</p>
-                <p style="position: absolute; top: 770px; left: 400px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[7]?.mark || "&nbsp;"}</p>
-                <p style="position: absolute; top: 810px; left: 400px; font-weight: bold; font-size: 1.2rem; color: black;">${formData.sizes[8]?.mark || "&nbsp;"}</p>
-                <p style="position: absolute; top: 443px; left: 390px; font-weight: bold; font-size: 1.4rem; color: white;">${formData.selectedMarkOption}</p>
-                <p style="position: absolute; top: 845px; left: 240px; font-weight: bold; font-size: 1.2rem;">${formData.grandTotal}</p>
-                <p style="position: absolute; top: 982px; left: 445px; font-weight: bold; font-size: 1.2rem;">${formData.grandTotal}</p>
-          </body>
-        </html>
-      `;
-  
-      // Create a temporary container
       const container = document.createElement('div');
-      container.innerHTML = content;
+      container.innerHTML = generateReceiptContent();
       document.body.appendChild(container);
-  
-      // Configure PDF options
-      const options = {
-        margin: [0, 0, 0, 0],
-        filename: `${formData.receiptNumber}_${formatDate(formData.date)}.pdf`,
-        image: { type: 'jpeg', quality: 1 },
-        html2canvas: { scale: 2.5, useCORS: true },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      };
-  
-      // Generate PDF
-      await html2pdf().set(options).from(container).save();
-  
-      // Clean up
+      
+      const canvas = await html2canvas(container, {
+        scale: 2,
+        useCORS: false,
+        windowWidth: 800,
+        windowHeight: 200,
+        logging: false,
+        backgroundColor: '#ffffff'
+      });
+
+      const jpegUrl = canvas.toDataURL('image/jpeg', 1.0);
+      const jpegLink = document.createElement('a');
+      jpegLink.download = `${formData.receiptNumber}_${formatDate(formData.date)}.jpg`;
+      jpegLink.href = jpegUrl;
+      jpegLink.click();
+
       document.body.removeChild(container);
+      return true;
     } catch (error) {
-      console.error('PDF Generation Error:', error);
-      throw new Error('Error generating PDF. Please try again.');
+      console.error('JPEG Generation Error:', error);
+      throw new Error('Error generating JPEG. Please try again.');
     }
   };
 
@@ -359,18 +345,14 @@ const JamaChallan = () => {
         },
       };
 
-      // First submit the data
       const response = await apiCall('post', '/return-items', submissionData);
+      await generateJPEG();
       
-      // Then generate the PDF
-      await generatePDF();
-      
-      alert("Return Item Submitted Successfully!");
+      alert("Return Item Submitted Successfully! JPEG file has been generated.");
 
-      // Reset form after successful submission
       setFormData(prev => ({
         ...prev,
-        receiptNumber: `RJ-${Date.now()}`,
+        receiptNumber: `RJ-`,
         userId: "",
         name: "",
         site: "",
@@ -398,76 +380,71 @@ const JamaChallan = () => {
 
   return (
     <Navbar>
-      <div className="bg-purple-100 w-full min-h-screen p-4 md:p-6 pt-20">
+      <div className="bg-gradient-to-br from-green-50 to-green-100 min-h-screen p-2 pt-16">
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4 mx-auto max-w-[800px]">
-            {error}
+          <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-3 mb-3 rounded shadow-lg mx-auto max-w-[800px] text-sm">
+            <p className="font-bold">Error</p>
+            <p>{error}</p>
           </div>
         )}
-  
+
         <form
           onSubmit={handleSubmit}
-          className="bg-yellow-100 border-2 border-red-600 w-full max-w-[800px] p-4 md:p-6 rounded-lg relative mx-auto"
+          className="bg-white rounded-lg shadow-2xl overflow-hidden max-w-[800px] mx-auto transform transition-all hover:shadow-green-200"
         >
-          {/* Header */}
-          <div className="border-b-2 border-red-600 pb-4 flex flex-col md:flex-row justify-between items-center gap-4">
-            <h1 className="text-red-600 text-xl md:text-2xl font-bold">જમા ચલણ</h1>
-            <button
-              type="button"
-              onClick={() => setShowNewUserModal(true)}
-              className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 w-full md:w-auto"
-            >
-              Add New User
-            </button>
+          {/* Header Section - Reduced padding */}
+          <div className="bg-gradient-to-r from-green-600 to-green-700 p-3">
+            <div className="flex flex-col items-center gap-2">
+              <h1 className="text-white text-xl font-bold tracking-wide">જમા ચલણ</h1>
+            </div>
           </div>
-  
-          {/* Details Section */}
-          <div className="mt-4 border-b-2 border-red-600 pb-4 space-y-4">
-            <div className="flex flex-col md:flex-row justify-between gap-4">
-              <div className="flex flex-col md:flex-row items-start md:items-center gap-2">
-                <label className="text-red-600 font-bold">ચલણ નંબર:</label>
+
+          {/* Basic Details Section - Reduced padding and spacing */}
+          <div className="p-3 space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="relative">
+                <label className="text-gray-700 font-semibold mb-1 block text-sm">ચલણ નંબર:</label>
                 <input
                   type="text"
                   name="receiptNumber"
                   value={formData.receiptNumber}
                   onChange={handleInputChange}
-                  className="bg-yellow-100 text-red-600 border-b-2 border-red-600 w-full md:w-auto"
+                  className="w-full px-2 py-1.5 rounded-lg border border-green-200 focus:border-green-500 focus:ring-1 focus:ring-green-200 transition-all duration-200 text-sm"
                   placeholder="RJ-"
                 />
               </div>
-  
-              <div className="flex flex-col md:flex-row items-start md:items-center gap-2">
-                <label className="text-red-600 font-bold">તારીખ:</label>
+
+              <div className="relative">
+                <label className="text-gray-700 font-semibold mb-1 block text-sm">તારીખ:</label>
                 <input
                   type="date"
                   name="date"
                   value={formData.date}
                   onChange={handleInputChange}
-                  className="bg-yellow-100 text-red-600 w-full md:w-auto"
+                  className="w-full px-2 py-1.5 rounded-lg border border-green-200 focus:border-green-500 focus:ring-1 focus:ring-green-200 transition-all duration-200 text-sm"
                 />
               </div>
             </div>
-  
-            {/* User Details Fields */}
-            <div className="space-y-4">
+            {/* User Details Section - Compact spacing */}
+            <div className="space-y-3">
               <div className="relative">
-                <label className="text-red-600 font-bold block mb-1">ID:</label>
+                <label className="text-gray-700 font-semibold mb-1 block text-sm">ID:</label>
                 <input
                   type="text"
                   name="userId"
                   value={formData.userId}
                   onChange={handleInputChange}
-                  className="border-b-2 border-red-600 outline-none bg-yellow-100 w-full text-red-600"
+                  className="w-full px-2 py-1.5 rounded-lg border border-green-200 focus:border-green-500 focus:ring-1 focus:ring-green-200 transition-all duration-200 text-sm"
                   placeholder="Enter User ID"
                   required
                 />
                 {suggestions.length > 0 && (
-                  <div className="absolute z-10 w-full bg-white border border-red-600 rounded-b-lg shadow-lg">
+                  <div className="absolute z-10 w-full mt-1 bg-white rounded-lg shadow-lg border border-green-100">
                     {suggestions.map((user, index) => (
                       <div
                         key={index}
                         onClick={() => handleSuggestionSelect(user)}
-                        className="p-2 hover:bg-yellow-100 cursor-pointer"
+                        className="px-3 py-1.5 hover:bg-green-50 cursor-pointer transition-colors duration-200 first:rounded-t-lg last:rounded-b-lg text-sm"
                       >
                         {user.displayText}
                       </div>
@@ -475,43 +452,38 @@ const JamaChallan = () => {
                   </div>
                 )}
               </div>
-  
-              {/* Other input fields */}
+
               {['name', 'site', 'phone'].map((field) => (
-                <div key={field}>
-                  <label className="text-red-600 font-bold block mb-1">
+                <div key={field} className="relative">
+                  <label className="text-gray-700 font-semibold mb-1 block text-sm">
                     {field === 'name' ? 'નામ:' : field === 'site' ? 'સાઇડ:' : 'મોબાઇલ:'}
                   </label>
                   <input
-                    type="text"
+                    type={field === 'phone' ? 'tel' : 'text'}
                     name={field}
                     value={formData[field]}
                     onChange={handleInputChange}
-                    className="border-b-2 border-red-600 outline-none bg-yellow-100 w-full text-red-600"
+                    className="w-full px-2 py-1.5 rounded-lg border border-green-200 focus:border-green-500 focus:ring-1 focus:ring-green-200 transition-all duration-200 text-sm"
                     placeholder={`Enter ${field.charAt(0).toUpperCase() + field.slice(1)}`}
                     required={field === 'name'}
+                    inputMode={field === 'phone' ? 'numeric' : 'text'}
+                    pattern={field === 'phone' ? '[0-9]*' : undefined}
                   />
                 </div>
               ))}
             </div>
           </div>
-  
-          {/* Table Section */}
-          <div className="overflow-x-auto mt-4">
-            <div className="inline-block min-w-full align-middle">
-              <table className="min-w-full border-collapse border-2 border-red-600">
+
+{/* Table Section - Compact design */}
+<div className="p-3 bg-green-50">
+            <div className="overflow-x-auto rounded-lg shadow-lg">
+              <table className="min-w-full bg-white">
                 <thead>
-                  <tr>
-                    <th className="border border-red-600 bg-red-600 text-white p-2 text-sm md:text-base">
-                      સાઈઝ
-                    </th>
-                    <th className="border border-red-600 bg-red-600 text-white p-2 text-sm md:text-base">
-                      કુલ
-                    </th>
-                    <th className="border border-red-600 bg-red-600 text-white p-2 text-sm md:text-base text-center">
-                      પ્લેટનંગ
-                    </th>
-                    <th className="border border-red-600 bg-red-600 text-white p-2 text-sm md:text-base text-center">
+                  <tr className="bg-gradient-to-r from-green-600 to-green-700 text-white">
+                    <th className="py-2 px-2 text-left text-white text-sm">સાઈઝ</th>
+                    <th className="py-2 px-2 text-center text-white text-sm">કુલ</th>
+                    <th className="py-2 px-2 text-center text-white text-sm">પ્લેટનંગ</th>
+                    <th className="py-2 px-2 text-center">
                       <SingleSelectionChecklist
                         formData={formData}
                         setFormData={setFormData}
@@ -521,75 +493,74 @@ const JamaChallan = () => {
                 </thead>
                 <tbody>
                   {formData.sizes.map((sizeItem, index) => (
-                    <tr key={index}>
-                      <td className="border border-red-600 p-2 text-red-600 text-center text-sm md:text-base">
-                        {sizeItem.size}
-                      </td>
-                      <td className="border border-red-600 p-2 text-red-600 font-bold text-center text-sm md:text-base">
+                    <tr key={index} className="border-b border-green-100 hover:bg-green-50 transition-colors duration-200">
+                      <td className="py-2 px-2 text-gray-800 text-sm">{sizeItem.size}</td>
+                      <td className="py-2 px-2 text-center font-semibold text-green-600 text-sm">
                         {(parseInt(sizeItem.pisces) || 0) + (parseInt(sizeItem.mark) || 0)}
                       </td>
-                      <td className="border border-red-600 p-2">
+                      <td className="py-2 px-2">
                         <input
                           type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
                           name="pisces"
                           value={sizeItem.pisces}
                           onChange={(e) => handleSizeInputChange(index, e)}
-                          className="w-full bg-yellow-100 outline-none text-red-600 text-center text-sm md:text-base"
+                          className="w-full px-2 py-1 rounded border border-green-200 focus:border-green-500 focus:ring-1 focus:ring-green-200 text-center transition-all duration-200 text-sm"
                           placeholder="Qty"
                         />
                       </td>
-                      <td className="border border-red-600 p-2">
+                      <td className="py-2 px-2">
                         <input
                           type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
                           name="mark"
                           value={sizeItem.mark}
                           onChange={(e) => handleSizeInputChange(index, e)}
-                          className="w-full bg-yellow-100 outline-none text-red-600 text-center text-sm md:text-base"
+                          className="w-full px-2 py-1 rounded border border-green-200 focus:border-green-500 focus:ring-1 focus:ring-green-200 text-center transition-all duration-200 text-sm"
                           placeholder="Marks"
                         />
                       </td>
                     </tr>
                   ))}
-                  <tr>
-                    <td className="border border-red-600 p-2 text-red-600 font-bold text-center text-sm md:text-base">
-                      કુલ નંગ
-                    </td>
-                    <td className="border border-red-600 p-2 font-bold text-red-600 text-center text-sm md:text-base">
-                      {formData.grandTotal}
-                    </td>
+                  <tr className="bg-green-50">
+                    <td className="py-2 px-2 font-bold text-green-700 text-sm">કુલ નંગ</td>
+                    <td className="py-2 px-2 text-center font-bold text-green-700 text-sm">{formData.grandTotal}</td>
                     <td colSpan="2"></td>
                   </tr>
                 </tbody>
               </table>
             </div>
           </div>
-  
-          {/* Notes Section */}
-          <div className="mt-4">
+
+
+          {/* Notes Section - Reduced padding */}
+          <div className="p-3">
             <textarea
               name="notes"
               value={formData.notes}
               onChange={handleInputChange}
-              rows="4"
+              rows="3"
               placeholder="Additional Notes"
-              className="w-full border border-red-600 bg-yellow-100 text-red-600 outline-none p-2 text-sm md:text-base"
+              className="w-full px-3 py-2 rounded-lg border border-green-200 focus:border-green-500 focus:ring-1 focus:ring-green-200 transition-all duration-200 text-sm"
             />
           </div>
-  
-          {/* Submit Button */}
-          <div className="mt-4 text-center">
+
+          {/* Submit Button - Compact design */}
+          <div className="p-3 bg-gray-50 border-t border-green-100">
             <button
               type="submit"
               disabled={isSubmitting}
-              className="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700 disabled:bg-red-300 w-full md:w-auto"
+              className="w-full px-6 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 disabled:from-green-300 disabled:to-green-400 transition-all duration-200 font-semibold shadow-lg hover:shadow-green-200 text-sm"
             >
-              {isSubmitting ? "Submitting..." : "જમા નંગ"}
+              {isSubmitting ? "જમાing..." : "જમા નંગ"}
             </button>
           </div>
         </form>
       </div>
     </Navbar>
   );
-  };
+};
 
-export default JamaChallan;
+export default UdharChallan;
